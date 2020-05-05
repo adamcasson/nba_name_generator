@@ -6,13 +6,13 @@ Created on Sat Apr 13 10:19:37 2019
 @author: adam
 """
 
-from typing import List
+from typing import List, Optional, Union
 
 import numpy as np
 from basketball_reference_web_scraper import client
 
 
-def get_player_names(season_end_years=[2019]):
+def get_player_names(season_end_years: Union[int, List[int]]=2019):
     """Gets a list of player first names and last names for the
         for the list of seasons given
         
@@ -26,6 +26,9 @@ def get_player_names(season_end_years=[2019]):
             names
     
     """
+    if isinstance(season_end_years, int):
+        season_end_years = [season_end_years]
+        
     # Query basketball reference to get player season total stats for 
     # the given years.
     player_totals = []
@@ -53,46 +56,8 @@ def get_player_names(season_end_years=[2019]):
     return first_names, last_names
 
 
-def letter_error_rate(fake_name, real_name):
-    d = edit_distance(fake_name, real_name)
-    result = float(d[len(fake_name)][len(real_name)]) / len(fake_name) * 100
-    
-    return result
-    
-
-def edit_distance(fake_name, real_name):
-    d = np.zeros((len(fake_name)+1, len(real_name)+1), dtype=np.uint8)
-    for i in range(len(fake_name)+1):
-        for j in range(len(real_name)+1):
-            if i == 0: 
-                d[0][j] = j
-            elif j == 0: 
-                d[i][0] = i
-    for i in range(1, len(fake_name)+1):
-        for j in range(1, len(real_name)+1):
-            if fake_name[i-1] == real_name[j-1]:
-                d[i][j] = d[i-1][j-1]
-            else:
-                substitute = d[i-1][j-1] + 1
-                insert = d[i][j-1] + 1
-                delete = d[i-1][j] + 1
-                d[i][j] = min(substitute, insert, delete)
-    return d
-
-
-def find_most_similar_name(fake_name, names):
-    lowest_ler = 100.0
-    closest_name = ''
-    for name in names:
-        ler = letter_error_rate(fake_name.lower(), name.lower())
-        if ler < lowest_ler:
-            lowest_ler = ler
-            closest_name = name
-    return closest_name.capitalize()
-
-
 class TimeVaryingMarkovLanguageModel:
-    def __init__(self, start_token='<', end_token='>'):
+    def __init__(self, start_token: str='<', end_token: str='>'):
         self.start_token = start_token
         self.end_token = end_token
         self.samples_fit = None
@@ -120,7 +85,7 @@ class TimeVaryingMarkovLanguageModel:
                     states.append(char)
         return states
     
-    def _new_freq_matrix(self, size):
+    def _new_freq_matrix(self, size: int):
         """Creates an empty numpy array used for holding frequency
             statistics between each character
             
@@ -172,7 +137,7 @@ class TimeVaryingMarkovLanguageModel:
         self.transitions = transitions
         self.samples_fit = samples
     
-    def generate(self, random=True):
+    def generate(self, random: Optional[bool]=True):
         """Generate a name give then transition probabilities and
         unique characters
         
